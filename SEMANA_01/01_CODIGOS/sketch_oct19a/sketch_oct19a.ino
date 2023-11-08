@@ -1,25 +1,33 @@
-#include <Arduino.h>
+#include <SPI.h>
+#include <MFRC522.h>
 
-const int pinLED = 13; // Define o pino GPIO para o LED
+#define RST_PIN    22
+#define SS_PIN     21
 
-const int pinLED2 = 27; 
-
-const int pinLED3 = 25; 
+MFRC522 mfrc522(SS_PIN, RST_PIN);
 
 void setup() {
-  pinMode(pinLED, OUTPUT); // Define o pino do LED como saída
-  pinMode(pinLED2, OUTPUT);
-  pinMode(pinLED3, OUTPUT);
+  Serial.begin(115200);
+  SPI.begin();
+  mfrc522.PCD_Init();
+  Serial.println("Aproxime um cartao RFID...");
 }
 
 void loop() {
-  digitalWrite(pinLED, HIGH); // Liga o LED
-  delay(1000); // Aguarda 1 segundo
-  digitalWrite(pinLED, LOW); 
-  digitalWrite(pinLED2, HIGH);
-  delay(1000); // Aguarda 1 segundo
-  digitalWrite(pinLED2, LOW); 
-  digitalWrite(pinLED3, HIGH);
-  delay(1000);
-  digitalWrite(pinLED3, LOW); 
+  if ( ! mfrc522.PICC_IsNewCardPresent()) {
+    return;
+  }
+
+  if ( ! mfrc522.PICC_ReadCardSerial()) {
+    return;
+  }
+
+  Serial.print("Cartao UID:");
+  for (byte i = 0; i < mfrc522.uid.size; i++) {
+    Serial.print(mfrc522.uid.uidByte[i] < 0x10 ? " 0" : " ");
+    Serial.print(mfrc522.uid.uidByte[i], HEX);
+  }
+  Serial.println();
+  mfrc522.PICC_HaltA();
+  mfrc522.PCD_StopCrypto1();
 }
